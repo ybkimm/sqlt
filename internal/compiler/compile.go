@@ -1,20 +1,15 @@
 package compiler
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/kyleconroy/sqlc/internal/metadata"
 	"github.com/kyleconroy/sqlc/internal/migrations"
 	"github.com/kyleconroy/sqlc/internal/multierr"
-	"github.com/kyleconroy/sqlc/internal/opts"
 	"github.com/kyleconroy/sqlc/internal/sql/ast"
-	"github.com/kyleconroy/sqlc/internal/sql/sqlerr"
 	"github.com/kyleconroy/sqlc/internal/sql/sqlpath"
 )
 
@@ -84,61 +79,61 @@ func (c *Compiler) parseCatalog(schemas []string) error {
 	return nil
 }
 
-func (c *Compiler) parseQueries(o opts.Parser) (*Result, error) {
-	var q []*Query
-	merr := multierr.New()
-	set := map[string]struct{}{}
-	files, err := sqlpath.Glob(c.conf.Queries)
-	if err != nil {
-		return nil, err
-	}
-	for _, filename := range files {
-		blob, err := os.ReadFile(filename)
-		if err != nil {
-			merr.Add(filename, "", 0, err)
-			continue
-		}
-		src := string(blob)
-		stmts, err := c.parser.Parse(strings.NewReader(src))
-		if err != nil {
-			merr.Add(filename, src, 0, err)
-			continue
-		}
-		for _, stmt := range stmts {
-			query, err := c.parseQuery(stmt.Raw, src, o)
-			if err == ErrUnsupportedStatementType {
-				continue
-			}
-			if err != nil {
-				var e *sqlerr.Error
-				loc := stmt.Raw.Pos()
-				if errors.As(err, &e) && e.Location != 0 {
-					loc = e.Location
-				}
-				merr.Add(filename, src, loc, err)
-				continue
-			}
-			if query.Name != "" {
-				if _, exists := set[query.Name]; exists {
-					merr.Add(filename, src, stmt.Raw.Pos(), fmt.Errorf("duplicate query name: %s", query.Name))
-					continue
-				}
-				set[query.Name] = struct{}{}
-			}
-			query.Filename = filepath.Base(filename)
-			if query != nil {
-				q = append(q, query)
-			}
-		}
-	}
-	if len(merr.Errs()) > 0 {
-		return nil, merr
-	}
-	if len(q) == 0 {
-		return nil, fmt.Errorf("no queries contained in paths %s", strings.Join(c.conf.Queries, ","))
-	}
-	return &Result{
-		Catalog: c.catalog,
-		Queries: q,
-	}, nil
-}
+// func (c *Compiler) parseQueries(o opts.Parser) (*Result, error) {
+// 	var q []*Query
+// 	merr := multierr.New()
+// 	set := map[string]struct{}{}
+// 	files, err := sqlpath.Glob(c.conf.Queries)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	for _, filename := range files {
+// 		blob, err := os.ReadFile(filename)
+// 		if err != nil {
+// 			merr.Add(filename, "", 0, err)
+// 			continue
+// 		}
+// 		src := string(blob)
+// 		stmts, err := c.parser.Parse(strings.NewReader(src))
+// 		if err != nil {
+// 			merr.Add(filename, src, 0, err)
+// 			continue
+// 		}
+// 		for _, stmt := range stmts {
+// 			query, err := c.parseQuery(stmt.Raw, src, o)
+// 			if err == ErrUnsupportedStatementType {
+// 				continue
+// 			}
+// 			if err != nil {
+// 				var e *sqlerr.Error
+// 				loc := stmt.Raw.Pos()
+// 				if errors.As(err, &e) && e.Location != 0 {
+// 					loc = e.Location
+// 				}
+// 				merr.Add(filename, src, loc, err)
+// 				continue
+// 			}
+// 			if query.Name != "" {
+// 				if _, exists := set[query.Name]; exists {
+// 					merr.Add(filename, src, stmt.Raw.Pos(), fmt.Errorf("duplicate query name: %s", query.Name))
+// 					continue
+// 				}
+// 				set[query.Name] = struct{}{}
+// 			}
+// 			query.Filename = filepath.Base(filename)
+// 			if query != nil {
+// 				q = append(q, query)
+// 			}
+// 		}
+// 	}
+// 	if len(merr.Errs()) > 0 {
+// 		return nil, merr
+// 	}
+// 	if len(q) == 0 {
+// 		return nil, fmt.Errorf("no queries contained in paths %s", strings.Join(c.conf.Queries, ","))
+// 	}
+// 	return &Result{
+// 		Catalog: c.catalog,
+// 		Queries: q,
+// 	}, nil
+// }

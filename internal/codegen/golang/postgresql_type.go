@@ -9,7 +9,7 @@ import (
 	"github.com/kyleconroy/sqlc/internal/sql/catalog"
 )
 
-func postgresType(r *compiler.Result, col *compiler.Column, settings config.CombinedSettings) string {
+func postgresType(r *catalog.Catalog, col *compiler.Column, settings config.CombinedSettings) string {
 	columnType := col.DataType
 	notNull := col.NotNull || col.IsArray
 	driver := parseDriver(settings)
@@ -246,10 +246,10 @@ func postgresType(r *compiler.Result, col *compiler.Column, settings config.Comb
 			return "interface{}"
 		}
 		if rel.Schema == "" {
-			rel.Schema = r.Catalog.DefaultSchema
+			rel.Schema = r.DefaultSchema
 		}
 
-		for _, schema := range r.Catalog.Schemas {
+		for _, schema := range r.Schemas {
 			if schema.Name == "pg_catalog" {
 				continue
 			}
@@ -257,7 +257,7 @@ func postgresType(r *compiler.Result, col *compiler.Column, settings config.Comb
 				switch t := typ.(type) {
 				case *catalog.Enum:
 					if rel.Name == t.Name && rel.Schema == schema.Name {
-						if schema.Name == r.Catalog.DefaultSchema {
+						if schema.Name == r.DefaultSchema {
 							return StructName(t.Name, settings)
 						}
 						return StructName(schema.Name+"_"+t.Name, settings)

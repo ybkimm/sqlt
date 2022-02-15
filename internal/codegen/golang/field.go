@@ -72,7 +72,8 @@ func toCamelInitCase(name string, initUpper bool) string {
 		if p == "id" {
 			out += "ID"
 		} else {
-			out += strings.Title(p)
+			// out += strings.Title(p)
+			out += strings.ToTitle(p)
 		}
 	}
 	return out

@@ -59,9 +59,9 @@ func mergeImports(imps ...fileImports) [][]ImportSpec {
 
 type importer struct {
 	Settings config.CombinedSettings
-	Queries  []Query
-	Enums    []Enum
-	Structs  []Struct
+	// Queries  []Query
+	Enums   []Enum
+	Structs []Struct
 }
 
 func (i *importer) usesType(typ string) bool {
@@ -77,56 +77,57 @@ func (i *importer) usesType(typ string) bool {
 }
 
 func (i *importer) Imports(filename string) [][]ImportSpec {
-	dbFileName := "db.go"
-	if i.Settings.Go.OutputDBFileName != "" {
-		dbFileName = i.Settings.Go.OutputDBFileName
-	}
+	// dbFileName := "db.go"
+	// if i.Settings.Go.OutputDBFileName != "" {
+	// 	dbFileName = i.Settings.Go.OutputDBFileName
+	// }
 	modelsFileName := "models.go"
 	if i.Settings.Go.OutputModelsFileName != "" {
 		modelsFileName = i.Settings.Go.OutputModelsFileName
 	}
-	querierFileName := "querier.go"
-	if i.Settings.Go.OutputQuerierFileName != "" {
-		querierFileName = i.Settings.Go.OutputQuerierFileName
-	}
-	copyfromFileName := "copyfrom.go"
+	// querierFileName := "querier.go"
+	// if i.Settings.Go.OutputQuerierFileName != "" {
+	// 	querierFileName = i.Settings.Go.OutputQuerierFileName
+	// }
+	// copyfromFileName := "copyfrom.go"
 
 	switch filename {
-	case dbFileName:
-		return mergeImports(i.dbImports())
+	// case dbFileName:
+	// 	return mergeImports(i.dbImports())
 	case modelsFileName:
 		return mergeImports(i.modelImports())
-	case querierFileName:
-		return mergeImports(i.interfaceImports())
-	case copyfromFileName:
-		return mergeImports(i.copyfromImports())
+	// case querierFileName:
+	// 	return mergeImports(i.interfaceImports())
+	// case copyfromFileName:
+	// 	return mergeImports(i.copyfromImports())
 	default:
-		return mergeImports(i.queryImports(filename))
+		panic("unknown file type: " + filename)
+		// return mergeImports(i.queryImports(filename))
 	}
 }
 
-func (i *importer) dbImports() fileImports {
-	var pkg []ImportSpec
-	std := []ImportSpec{
-		{Path: "context"},
-	}
-
-	sqlpkg := SQLPackageFromString(i.Settings.Go.SQLPackage)
-	switch sqlpkg {
-	case SQLPackagePGX:
-		pkg = append(pkg, ImportSpec{Path: "github.com/jackc/pgconn"})
-		pkg = append(pkg, ImportSpec{Path: "github.com/jackc/pgx/v4"})
-	default:
-		std = append(std, ImportSpec{Path: "database/sql"})
-		if i.Settings.Go.EmitPreparedQueries {
-			std = append(std, ImportSpec{Path: "fmt"})
-		}
-	}
-
-	sort.Slice(std, func(i, j int) bool { return std[i].Path < std[j].Path })
-	sort.Slice(pkg, func(i, j int) bool { return pkg[i].Path < pkg[j].Path })
-	return fileImports{Std: std, Dep: pkg}
-}
+// func (i *importer) dbImports() fileImports {
+// 	var pkg []ImportSpec
+// 	std := []ImportSpec{
+// 		{Path: "context"},
+// 	}
+//
+// 	sqlpkg := SQLPackageFromString(i.Settings.Go.SQLPackage)
+// 	switch sqlpkg {
+// 	case SQLPackagePGX:
+// 		pkg = append(pkg, ImportSpec{Path: "github.com/jackc/pgconn"})
+// 		pkg = append(pkg, ImportSpec{Path: "github.com/jackc/pgx/v4"})
+// 	default:
+// 		std = append(std, ImportSpec{Path: "database/sql"})
+// 		if i.Settings.Go.EmitPreparedQueries {
+// 			std = append(std, ImportSpec{Path: "fmt"})
+// 		}
+// 	}
+//
+// 	sort.Slice(std, func(i, j int) bool { return std[i].Path < std[j].Path })
+// 	sort.Slice(pkg, func(i, j int) bool { return pkg[i].Path < pkg[j].Path })
+// 	return fileImports{Std: std, Dep: pkg}
+// }
 
 var stdlibTypes = map[string]string{
 	"json.RawMessage":  "encoding/json",
@@ -184,13 +185,13 @@ func buildImports(settings config.CombinedSettings, queries []Query, uses func(s
 		}
 	}
 
-	for typeName, _ := range pgtypeTypes {
+	for typeName := range pgtypeTypes {
 		if uses(typeName) {
 			pkg[ImportSpec{Path: "github.com/jackc/pgtype"}] = struct{}{}
 		}
 	}
 
-	for typeName, _ := range pqtypeTypes {
+	for typeName := range pqtypeTypes {
 		if uses(typeName) {
 			pkg[ImportSpec{Path: "github.com/tabbed/pqtype"}] = struct{}{}
 		}
@@ -232,27 +233,27 @@ func buildImports(settings config.CombinedSettings, queries []Query, uses func(s
 	return std, pkg
 }
 
-func (i *importer) interfaceImports() fileImports {
-	std, pkg := buildImports(i.Settings, i.Queries, func(name string) bool {
-		for _, q := range i.Queries {
-			if q.hasRetType() {
-				if strings.HasPrefix(q.Ret.Type(), name) {
-					return true
-				}
-			}
-			if !q.Arg.isEmpty() {
-				if strings.HasPrefix(q.Arg.Type(), name) {
-					return true
-				}
-			}
-		}
-		return false
-	})
-
-	std["context"] = struct{}{}
-
-	return sortedImports(std, pkg)
-}
+// func (i *importer) interfaceImports() fileImports {
+// 	std, pkg := buildImports(i.Settings, i.Queries, func(name string) bool {
+// 		for _, q := range i.Queries {
+// 			if q.hasRetType() {
+// 				if strings.HasPrefix(q.Ret.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 			if !q.Arg.isEmpty() {
+// 				if strings.HasPrefix(q.Arg.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 		}
+// 		return false
+// 	})
+//
+// 	std["context"] = struct{}{}
+//
+// 	return sortedImports(std, pkg)
+// }
 
 func (i *importer) modelImports() fileImports {
 	std, pkg := buildImports(i.Settings, nil, func(prefix string) bool {
@@ -280,115 +281,115 @@ func sortedImports(std map[string]struct{}, pkg map[ImportSpec]struct{}) fileImp
 	return fileImports{stds, pkgs}
 }
 
-func (i *importer) queryImports(filename string) fileImports {
-	var gq []Query
-	anyNonCopyFrom := false
-	for _, query := range i.Queries {
-		if query.SourceName == filename {
-			gq = append(gq, query)
-			if query.Cmd != metadata.CmdCopyFrom {
-				anyNonCopyFrom = true
-			}
-		}
-	}
+// func (i *importer) queryImports(filename string) fileImports {
+// 	var gq []Query
+// 	anyNonCopyFrom := false
+// 	for _, query := range i.Queries {
+// 		if query.SourceName == filename {
+// 			gq = append(gq, query)
+// 			if query.Cmd != metadata.CmdCopyFrom {
+// 				anyNonCopyFrom = true
+// 			}
+// 		}
+// 	}
+//
+// 	std, pkg := buildImports(i.Settings, gq, func(name string) bool {
+// 		for _, q := range gq {
+// 			if q.hasRetType() {
+// 				if q.Ret.EmitStruct() {
+// 					for _, f := range q.Ret.Struct.Fields {
+// 						fType := strings.TrimPrefix(f.Type, "[]")
+// 						if strings.HasPrefix(fType, name) {
+// 							return true
+// 						}
+// 					}
+// 				}
+// 				if strings.HasPrefix(q.Ret.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 			if !q.Arg.isEmpty() {
+// 				if q.Arg.EmitStruct() {
+// 					for _, f := range q.Arg.Struct.Fields {
+// 						fType := strings.TrimPrefix(f.Type, "[]")
+// 						if strings.HasPrefix(fType, name) {
+// 							return true
+// 						}
+// 					}
+// 				}
+// 				if strings.HasPrefix(q.Arg.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 		}
+// 		return false
+// 	})
+//
+// 	sliceScan := func() bool {
+// 		for _, q := range gq {
+// 			if q.hasRetType() {
+// 				if q.Ret.IsStruct() {
+// 					for _, f := range q.Ret.Struct.Fields {
+// 						if strings.HasPrefix(f.Type, "[]") && f.Type != "[]byte" {
+// 							return true
+// 						}
+// 					}
+// 				} else {
+// 					if strings.HasPrefix(q.Ret.Type(), "[]") && q.Ret.Type() != "[]byte" {
+// 						return true
+// 					}
+// 				}
+// 			}
+// 			if !q.Arg.isEmpty() {
+// 				if q.Arg.IsStruct() {
+// 					for _, f := range q.Arg.Struct.Fields {
+// 						if strings.HasPrefix(f.Type, "[]") && f.Type != "[]byte" {
+// 							return true
+// 						}
+// 					}
+// 				} else {
+// 					if strings.HasPrefix(q.Arg.Type(), "[]") && q.Arg.Type() != "[]byte" {
+// 						return true
+// 					}
+// 				}
+// 			}
+// 		}
+// 		return false
+// 	}
+//
+// 	if anyNonCopyFrom {
+// 		std["context"] = struct{}{}
+// 	}
+//
+// 	sqlpkg := SQLPackageFromString(i.Settings.Go.SQLPackage)
+// 	if sliceScan() && sqlpkg != SQLPackagePGX {
+// 		pkg[ImportSpec{Path: "github.com/lib/pq"}] = struct{}{}
+// 	}
+//
+// 	return sortedImports(std, pkg)
+// }
 
-	std, pkg := buildImports(i.Settings, gq, func(name string) bool {
-		for _, q := range gq {
-			if q.hasRetType() {
-				if q.Ret.EmitStruct() {
-					for _, f := range q.Ret.Struct.Fields {
-						fType := strings.TrimPrefix(f.Type, "[]")
-						if strings.HasPrefix(fType, name) {
-							return true
-						}
-					}
-				}
-				if strings.HasPrefix(q.Ret.Type(), name) {
-					return true
-				}
-			}
-			if !q.Arg.isEmpty() {
-				if q.Arg.EmitStruct() {
-					for _, f := range q.Arg.Struct.Fields {
-						fType := strings.TrimPrefix(f.Type, "[]")
-						if strings.HasPrefix(fType, name) {
-							return true
-						}
-					}
-				}
-				if strings.HasPrefix(q.Arg.Type(), name) {
-					return true
-				}
-			}
-		}
-		return false
-	})
-
-	sliceScan := func() bool {
-		for _, q := range gq {
-			if q.hasRetType() {
-				if q.Ret.IsStruct() {
-					for _, f := range q.Ret.Struct.Fields {
-						if strings.HasPrefix(f.Type, "[]") && f.Type != "[]byte" {
-							return true
-						}
-					}
-				} else {
-					if strings.HasPrefix(q.Ret.Type(), "[]") && q.Ret.Type() != "[]byte" {
-						return true
-					}
-				}
-			}
-			if !q.Arg.isEmpty() {
-				if q.Arg.IsStruct() {
-					for _, f := range q.Arg.Struct.Fields {
-						if strings.HasPrefix(f.Type, "[]") && f.Type != "[]byte" {
-							return true
-						}
-					}
-				} else {
-					if strings.HasPrefix(q.Arg.Type(), "[]") && q.Arg.Type() != "[]byte" {
-						return true
-					}
-				}
-			}
-		}
-		return false
-	}
-
-	if anyNonCopyFrom {
-		std["context"] = struct{}{}
-	}
-
-	sqlpkg := SQLPackageFromString(i.Settings.Go.SQLPackage)
-	if sliceScan() && sqlpkg != SQLPackagePGX {
-		pkg[ImportSpec{Path: "github.com/lib/pq"}] = struct{}{}
-	}
-
-	return sortedImports(std, pkg)
-}
-
-func (i *importer) copyfromImports() fileImports {
-	std, pkg := buildImports(i.Settings, i.Queries, func(name string) bool {
-		for _, q := range i.Queries {
-			if q.Cmd != metadata.CmdCopyFrom {
-				continue
-			}
-			if q.hasRetType() {
-				if strings.HasPrefix(q.Ret.Type(), name) {
-					return true
-				}
-			}
-			if !q.Arg.isEmpty() {
-				if strings.HasPrefix(q.Arg.Type(), name) {
-					return true
-				}
-			}
-		}
-		return false
-	})
-
-	std["context"] = struct{}{}
-
-	return sortedImports(std, pkg)
-}
+// func (i *importer) copyfromImports() fileImports {
+// 	std, pkg := buildImports(i.Settings, i.Queries, func(name string) bool {
+// 		for _, q := range i.Queries {
+// 			if q.Cmd != metadata.CmdCopyFrom {
+// 				continue
+// 			}
+// 			if q.hasRetType() {
+// 				if strings.HasPrefix(q.Ret.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 			if !q.Arg.isEmpty() {
+// 				if strings.HasPrefix(q.Arg.Type(), name) {
+// 					return true
+// 				}
+// 			}
+// 		}
+// 		return false
+// 	})
+//
+// 	std["context"] = struct{}{}
+//
+// 	return sortedImports(std, pkg)
+// }

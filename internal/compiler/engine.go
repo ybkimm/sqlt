@@ -7,7 +7,6 @@ import (
 	"github.com/kyleconroy/sqlc/internal/engine/dolphin"
 	"github.com/kyleconroy/sqlc/internal/engine/postgresql"
 	"github.com/kyleconroy/sqlc/internal/engine/sqlite"
-	"github.com/kyleconroy/sqlc/internal/opts"
 	"github.com/kyleconroy/sqlc/internal/sql/catalog"
 )
 
@@ -16,7 +15,7 @@ type Compiler struct {
 	combo   config.CombinedSettings
 	catalog *catalog.Catalog
 	parser  Parser
-	result  *Result
+	// result  *Result
 }
 
 func NewCompiler(conf config.SQL, combo config.CombinedSettings) *Compiler {
@@ -45,15 +44,15 @@ func (c *Compiler) ParseCatalog(schema []string) error {
 	return c.parseCatalog(schema)
 }
 
-func (c *Compiler) ParseQueries(queries []string, o opts.Parser) error {
-	r, err := c.parseQueries(o)
-	if err != nil {
-		return err
-	}
-	c.result = r
-	return nil
-}
+// func (c *Compiler) ParseQueries(queries []string, o opts.Parser) error {
+// 	r, err := c.parseQueries(o)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	c.result = r
+// 	return nil
+// }
 
-func (c *Compiler) Result() *Result {
-	return c.result
-}
+// func (c *Compiler) Result() *Result {
+// 	return c.result
+// }

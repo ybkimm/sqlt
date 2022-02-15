@@ -12,13 +12,12 @@ import (
 	"strings"
 
 	"github.com/kyleconroy/sqlc/internal/codegen/golang"
-	"github.com/kyleconroy/sqlc/internal/codegen/kotlin"
-	"github.com/kyleconroy/sqlc/internal/codegen/python"
 	"github.com/kyleconroy/sqlc/internal/compiler"
 	"github.com/kyleconroy/sqlc/internal/config"
 	"github.com/kyleconroy/sqlc/internal/debug"
 	"github.com/kyleconroy/sqlc/internal/multierr"
 	"github.com/kyleconroy/sqlc/internal/opts"
+	"github.com/kyleconroy/sqlc/internal/sql/catalog"
 )
 
 const errMessageNoVersion = `The configuration file must have a version number.
@@ -192,12 +191,12 @@ func Generate(ctx context.Context, e Env, dir, filename string, stderr io.Writer
 		case sql.Gen.Go != nil:
 			out = combo.Go.Out
 			files, err = golang.Generate(result, combo)
-		case sql.Gen.Kotlin != nil:
-			out = combo.Kotlin.Out
-			files, err = kotlin.Generate(result, combo)
-		case sql.Gen.Python != nil:
-			out = combo.Python.Out
-			files, err = python.Generate(result, combo)
+		// case sql.Gen.Kotlin != nil:
+		// 	out = combo.Kotlin.Out
+		// 	files, err = kotlin.Generate(result, combo)
+		// case sql.Gen.Python != nil:
+		// 	out = combo.Python.Out
+		// 	files, err = python.Generate(result, combo)
 		default:
 			panic("missing language backend")
 		}
@@ -229,7 +228,7 @@ func Generate(ctx context.Context, e Env, dir, filename string, stderr io.Writer
 	return output, nil
 }
 
-func parse(ctx context.Context, e Env, name, dir string, sql config.SQL, combo config.CombinedSettings, parserOpts opts.Parser, stderr io.Writer) (*compiler.Result, bool) {
+func parse(ctx context.Context, e Env, name, dir string, sql config.SQL, combo config.CombinedSettings, parserOpts opts.Parser, stderr io.Writer) (*catalog.Catalog, bool) {
 	if debug.Traced {
 		defer trace.StartRegion(ctx, "parse").End()
 	}
@@ -248,16 +247,16 @@ func parse(ctx context.Context, e Env, name, dir string, sql config.SQL, combo c
 	if parserOpts.Debug.DumpCatalog {
 		debug.Dump(c.Catalog())
 	}
-	if err := c.ParseQueries(sql.Queries, parserOpts); err != nil {
-		fmt.Fprintf(stderr, "# package %s\n", name)
-		if parserErr, ok := err.(*multierr.Error); ok {
-			for _, fileErr := range parserErr.Errs() {
-				printFileErr(stderr, dir, fileErr)
-			}
-		} else {
-			fmt.Fprintf(stderr, "error parsing queries: %s\n", err)
-		}
-		return nil, true
-	}
-	return c.Result(), false
+	// if err := c.ParseQueries(sql.Queries, parserOpts); err != nil {
+	// 	fmt.Fprintf(stderr, "# package %s\n", name)
+	// 	if parserErr, ok := err.(*multierr.Error); ok {
+	// 		for _, fileErr := range parserErr.Errs() {
+	// 			printFileErr(stderr, dir, fileErr)
+	// 		}
+	// 	} else {
+	// 		fmt.Fprintf(stderr, "error parsing queries: %s\n", err)
+	// 	}
+	// 	return nil, true
+	// }
+	return c.Catalog(), false
 }
